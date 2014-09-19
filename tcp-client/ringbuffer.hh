@@ -10,10 +10,10 @@
 static inline
 std::size_t xread (int fd, char* dst, std::size_t len)
 {
-	auto n = ::read (fd, static_cast <void*> (dst), len);
+	int n = ::read (fd, static_cast <void*> (dst), len);
 	switch (n)
 	{
-	case RWERROR:
+	case -1:
 		if (errno == EAGAIN || errno == EINTR)
 			return 0;
 		else
@@ -32,10 +32,10 @@ std::size_t xread (int fd, char* dst, std::size_t len)
 static inline
 std::size_t xwrite (int fd, const char* src, std::size_t len)
 {
-	auto n = ::write (fd, static_cast <const void*> (src), len);
+	int n = ::write (fd, static_cast <const void*> (src), len);
 	switch (n)
 	{
-	case RWERROR:
+	case -1:
 		if (errno == EAGAIN || errno == EINTR)
 			return 0;
 		else
