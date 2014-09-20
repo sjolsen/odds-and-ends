@@ -28,7 +28,8 @@ template <typename Int>
 Int string_to (const std::string& s)
 {
 	auto n = std::stoll (std::string {s});
-	if (n > std::numeric_limits <Int>::max ())
+	if (n > std::numeric_limits <Int>::max () ||
+	    n < std::numeric_limits <Int>::min ())
 		throw std::out_of_range ("string_to");
 	return n;
 }
