@@ -73,67 +73,51 @@ std::uintmax_t ceil_log (std::uintmax_t value, std::uintmax_t base)
 	return (value == 0) ? 0 : ceil_log_of_oneplus (value - 1, base);
 }
 
+template <typename Int, std::uint_fast8_t Base>
+static inline constexpr
+std::size_t buffer_length ()
+{
+	// ceil(log) characters for text, one for \0 terminator, one for negative sign
+	return ceil_log_of_oneplus (max_abs <Int> (), Base) + 1 + (std::is_signed <Int>::value ? 1 : 0);
+}
+
 template <std::size_t Chars>
 struct format_buffer
 {
-	unsigned_type <ceil_log (Chars, 2)> length;
+	unsigned_type <ceil_log (Chars, 2)> begin_index;
 	char buffer [Chars];
+
+	auto begin ()       { return buffer + begin_index; }
+	auto begin () const { return buffer + begin_index; }
+	auto end ()         { return buffer + Chars - 1; }
+	auto end () const   { return buffer + Chars - 1; }
 };
 
-std::size_t format_uint_2special (char* buffer, std::uintmax_t value, std::uint_fast8_t base_power);
-std::size_t format_uint_generic (char* buffer, std::uintmax_t value, std::uint_fast8_t base);
+char* format_uint_2special (char* buffer_end, std::uintmax_t value, std::uint_fast8_t base_power);
+char* format_uint_generic (char* buffer_end, std::uintmax_t value, std::uint_fast8_t base);
 
-template <std::uint_fast8_t Base, typename UInt>
-static inline
-auto format_impl (UInt value, std::false_type is_signed)
-{
-	// ceil(log) characters for text, one for \0 terminator
-	format_buffer <ceil_log_of_oneplus (max_abs <UInt> (), Base) + 1> buffer;
-
-	switch (Base)
-	{
-	case 2:  buffer.length = format_uint_2special (buffer.buffer, value, 1);    break;
-	case 4:  buffer.length = format_uint_2special (buffer.buffer, value, 2);    break;
-	case 8:  buffer.length = format_uint_2special (buffer.buffer, value, 3);    break;
-	case 16: buffer.length = format_uint_2special (buffer.buffer, value, 4);    break;
-	default: buffer.length = format_uint_generic  (buffer.buffer, value, Base); break;
-	}
-
-	return buffer;
-}
-
-template <std::uint_fast8_t Base, typename SInt>
-static inline
-auto format_impl (SInt value, std::true_type is_signed)
-{
-	// one for negative sign, ceil(log) characters for text, one for \0 terminator
-	format_buffer <1 + ceil_log_of_oneplus (max_abs <SInt> (), Base) + 1> buffer;
-	char* bstart = buffer.buffer;
-
-	buffer.length = 0;
-	if (value < 0)
-	{
-		*bstart++ = '-';
-		++buffer.length;
-	}
-
-	switch (Base)
-	{
-	case 2:  buffer.length += format_uint_2special (bstart, safe_abs (value), 1);    break;
-	case 4:  buffer.length += format_uint_2special (bstart, safe_abs (value), 2);    break;
-	case 8:  buffer.length += format_uint_2special (bstart, safe_abs (value), 3);    break;
-	case 16: buffer.length += format_uint_2special (bstart, safe_abs (value), 4);    break;
-	default: buffer.length += format_uint_generic  (bstart, safe_abs (value), Base); break;
-	}
-
-	return buffer;
-}
-
-template <std::uint_fast8_t Base = 10, typename Int, requires (2 <= Base && Base <= 16)>
+template <std::uint_fast8_t Base = 10, typename Int>
 static inline
 auto format (Int value)
 {
-	return format_impl <Base> (value, std::is_signed <Int> {});
+	format_buffer <buffer_length <Int, Base> ()> buffer;
+	auto buffer_end = buffer.buffer + buffer_length <Int, Base> ();
+
+	char* begin;
+	switch (Base)
+	{
+	case 2:  begin = format_uint_2special (buffer_end, safe_abs (value), 1);    break;
+	case 4:  begin = format_uint_2special (buffer_end, safe_abs (value), 2);    break;
+	case 8:  begin = format_uint_2special (buffer_end, safe_abs (value), 3);    break;
+	case 16: begin = format_uint_2special (buffer_end, safe_abs (value), 4);    break;
+	default: begin = format_uint_generic  (buffer_end, safe_abs (value), Base); break;
+	}
+
+	if (value < 0)
+		*--begin = '-';
+	buffer.begin_index = begin - buffer.buffer;
+
+	return buffer;
 }
 
 #endif
