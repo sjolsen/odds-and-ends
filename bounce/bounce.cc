@@ -260,7 +260,7 @@ void do_physics (Ball* begin, Ball* end, sf::Time update_ms, float dragf, float 
 
 	for (auto b1 = begin; b1 != end; ++b1)
 	{
-		collide (*b1, bounding_box {0.0f, 0.0f, (float)window_width, (float)window_height});
+//		collide (*b1, bounding_box {0.0f, 0.0f, (float)window_width, (float)window_height});
 		drag (*b1, update_ms, dragf);
 		accelerate (*b1, update_ms, acceleration);
 	}
@@ -268,13 +268,13 @@ void do_physics (Ball* begin, Ball* end, sf::Time update_ms, float dragf, float 
 
 int main()
 {
-	unsigned int window_width = 800;
-	unsigned int window_height = 600;
+	unsigned int window_width = 1280;
+	unsigned int window_height = 1040;
 	const int bpp = 32;
 	const float speed = 300;
-	const sf::Vector2f acceleration = {0.0f, 000.0f};
+	const sf::Vector2f acceleration = {0.0f, 00.0f};
 	const float dragf = 0.001f;
-	const float attractf = 500000.0f;
+	const float attractf = -500000.0f;
 
 //	sf::View view ({0.0f, 0.0f, (float)window_width, (float)window_height});
 	sf::RenderWindow window(sf::VideoMode(window_width, window_height, bpp), "Bouncing ball");
