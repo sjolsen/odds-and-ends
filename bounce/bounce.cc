@@ -243,7 +243,7 @@ Ball random_ball (URNG&& gen, float speed, float radius, unsigned int window_wid
 	             speed * random_direction ([&] { return theta (gen); }),
 	             colors [color (gen)],
 	             radius,
-	             2);
+	             0);
 }
 
 void do_physics (Ball* begin, Ball* end, sf::Time update_ms, float dragf, float attractf, sf::Vector2f acceleration, unsigned int window_width, unsigned int window_height)
@@ -260,7 +260,7 @@ void do_physics (Ball* begin, Ball* end, sf::Time update_ms, float dragf, float 
 
 	for (auto b1 = begin; b1 != end; ++b1)
 	{
-//		collide (*b1, bounding_box {0.0f, 0.0f, (float)window_width, (float)window_height});
+		collide (*b1, bounding_box {0.0f, 0.0f, (float)window_width, (float)window_height});
 		drag (*b1, update_ms, dragf);
 		accelerate (*b1, update_ms, acceleration);
 	}
@@ -268,13 +268,13 @@ void do_physics (Ball* begin, Ball* end, sf::Time update_ms, float dragf, float 
 
 int main()
 {
-	unsigned int window_width = 1280;
-	unsigned int window_height = 1040;
+	unsigned int window_width = 800;
+	unsigned int window_height = 600;
 	const int bpp = 32;
 	const float speed = 300;
 	const sf::Vector2f acceleration = {0.0f, 00.0f};
-	const float dragf = 0.001f;
-	const float attractf = -500000.0f;
+	const float dragf = 0.00f;
+	const float attractf = 00000.0f;
 
 //	sf::View view ({0.0f, 0.0f, (float)window_width, (float)window_height});
 	sf::RenderWindow window(sf::VideoMode(window_width, window_height, bpp), "Bouncing ball");
@@ -288,10 +288,16 @@ int main()
 	Ball balls [100];
 	for (Ball& b : balls)
 		b = random_ball (engine, speed, 8, window_width, window_height);
+	window.clear(sf::Color::Black);
 
 	sf::Clock clock;
 	sf::Time elapsed = clock.restart();
-	const sf::Time update_ms = sf::seconds(1.f / 120.f);
+	const sf::Time update_ms = sf::seconds(1.f / 20.f);
+
+	sf::RectangleShape mask ({(float)window_width, (float)window_height});
+	mask.setPosition ({0.0f, 0.0f});
+	mask.setFillColor (sf::Color (0, 0, 0, 5));
+
 	while (window.isOpen()) {
 		sf::Event event;
 		while (window.pollEvent(event)) {
@@ -322,7 +328,7 @@ int main()
 			elapsed -= update_ms;
 		}
 
-		window.clear(sf::Color(58, 110, 165));
+		window.draw (mask, sf::BlendMode::BlendAlpha);
 		for (const Ball& b : balls)
 			draw (window, b);
 		window.display();
