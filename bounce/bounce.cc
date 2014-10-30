@@ -25,6 +25,7 @@
 #include <functional>
 #include <cstdlib>
 #include <cmath>
+#include "vectors.hh"
 
 class Ball
 {
@@ -88,58 +89,51 @@ decltype (auto) draw (sf::RenderWindow& window, const Ball& Ball)
 
 
 
-void collide (Ball& ball, sf::Time interval, unsigned int window_width, unsigned int window_height)
+struct bounding_box
 {
-	const auto delta = interval.asSeconds () * ball.velocity ();
-	auto pos = ball.position () + delta;
-
-	if (pos.x - ball.radius () < 0) { // left window edge
-		ball.set_velocity ({ball.velocity ().x * -1, ball.velocity ().y});
-		pos.x = 0 + ball.radius ();
-	} else if (pos.x + ball.radius () >= window_width) { // right window edge
-		ball.set_velocity ({ball.velocity ().x * -1, ball.velocity ().y});
-		pos.x = window_width - ball.radius ();
-	}
-	if (pos.y - ball.radius () < 0) { // top of window
-		ball.set_velocity ({ball.velocity ().x, ball.velocity ().y * -1});
-		pos.y = 0 + ball.radius ();
-	} else if (pos.y + ball.radius () >= window_height) { // bottom of window
-		ball.set_velocity ({ball.velocity ().x, ball.velocity ().y * -1});
-		pos.y = window_height - ball.radius ();
-	}
-
-	ball.set_position (pos);
-}
+	float left;
+	float top;
+	float right;
+	float bottom;
+};
 
 static inline
-float dot (sf::Vector2f x, sf::Vector2f y)
+float backup (Ball& ball, bounding_box box)
 {
-	return x.x * y.x + x.y * y.y;
+	const auto r = ball.radius ();
+	auto x = ball.position ();
+	auto v = ball.velocity ();
+
+	const auto left = box.left + r;
+	const auto right = box.right - r;
+	const auto top = box.top + r;
+	const auto bottom = box.bottom - r;
+
+	float t = 0.0f;
+	auto nv = -v;
+	if (x.x < left)
+		t = std::max (t, std::abs ((x.x - left) / v.x));
+	else if (x.x > right)
+		t = std::max (t, std::abs ((x.x - right) / v.x));
+	else
+		nv.x = v.x;
+	if (x.y < top)
+		t = std::max (t, std::abs ((x.y - top) / v.y));
+	else if (x.y > bottom)
+		t = std::max (t, std::abs ((x.y - bottom) / v.y));
+	else
+		nv.y = v.y;
+
+	ball.set_position (x - v * t);
+	ball.set_velocity (nv);
+	return t;
 }
 
-static inline
-float magnitude_sq (sf::Vector2f x)
+void collide (Ball& b, bounding_box box)
 {
-	return dot (x, x);
-}
-
-static inline
-sf::Vector2f direction (sf::Vector2f v)
-{
-	return v / std::sqrt (magnitude_sq (v));
-}
-
-static inline
-float distance (sf::Vector2f x, sf::Vector2f y)
-{
-	return std::sqrt (magnitude_sq (y - x));
-}
-
-static inline
-sf::Vector2f proj (sf::Vector2f a, sf::Vector2f b)
-// Projection of a onto b
-{
-	return (dot (a, b) / magnitude_sq (b)) * b;
+	float t = 0.0f;
+	while ((t = backup (b, box)) != 0.0f)
+		b.set_position (b.position () + b.velocity () * t);
 }
 
 static inline
@@ -216,8 +210,8 @@ Ball random_ball (URNG&& gen, float speed, float radius, unsigned int window_wid
 		sf::Color::Cyan
 	};
 
-	std::uniform_real_distribution <float> posx (0, window_width);
-	std::uniform_real_distribution <float> posy (0, window_height);
+	std::uniform_real_distribution <float> posx (radius, window_width - radius);
+	std::uniform_real_distribution <float> posy (radius, window_height - radius);
 	std::uniform_real_distribution <float> theta (0, 2 * M_PI);
 	std::uniform_int_distribution <int> color (0, std::end (colors) - std::begin (colors) - 1);
 
@@ -231,12 +225,15 @@ Ball random_ball (URNG&& gen, float speed, float radius, unsigned int window_wid
 void do_physics (Ball* begin, Ball* end, sf::Time update_ms, float dragf, sf::Vector2f acceleration, unsigned int window_width, unsigned int window_height)
 {
 	for (auto b1 = begin; b1 != end; ++b1)
+		b1->set_position (b1->position () + b1->velocity () * update_ms.asSeconds ());
+
+	for (auto b1 = begin; b1 != end; ++b1)
 		for (auto b2 = b1 + 1; b2 != end; ++b2)
 			collide (*b1, *b2);
 
 	for (auto b1 = begin; b1 != end; ++b1)
 	{
-		collide (*b1, update_ms, window_width, window_height);
+		collide (*b1, bounding_box {0.0f, 0.0f, (float)window_width, (float)window_height});
 		drag (*b1, update_ms, dragf);
 		accelerate (*b1, update_ms, acceleration);
 	}
@@ -251,17 +248,18 @@ int main()
 	const sf::Vector2f acceleration = {0.0f, 000.0f};
 	const float dragf = 0.000f;
 
-	sf::View view ({window_width/2.0f, window_height/2.0f}, {(float)window_width, (float)window_height});
+//	sf::View view ({0.0f, 0.0f, (float)window_width, (float)window_height});
 	sf::RenderWindow window(sf::VideoMode(window_width, window_height, bpp), "Bouncing ball");
-	window.setView (view);
+//	window.setView (view);
 	window.setVerticalSyncEnabled(true);
+//	auto wpos = window.getPosition ();
 
 	std::random_device seed_device;
 	std::default_random_engine engine(seed_device());
 
 	Ball balls [400];
 	for (Ball& b : balls)
-		b = random_ball (engine, speed, 8, window_width/8, window_height/8);
+		b = random_ball (engine, speed, 8, window_width, window_height);
 
 	sf::Clock clock;
 	sf::Time elapsed = clock.restart();
@@ -274,14 +272,21 @@ int main()
 				window.close();
 				break;
 			}
-			if (event.type == sf::Event::Resized) {
-				window_width = event.size.width;
-				window_height = event.size.height;
-				view.reset ({0.0f, 0.0f, (float)window_width, (float)window_height});
-				window.setView (view);
-				break;
-			}
+			// if (event.type == sf::Event::Resized) {
+			// 	window_width = event.size.width;
+			// 	window_height = event.size.height;
+			// 	view.reset ({0.0f, 0.0f, (float)window_width, (float)window_height});
+			// 	view.setViewport ({0.0f, 0.0f, 1.0f, 1.0f});
+			// 	window.setView (view);
+			// 	break;
+			// }
 		}
+
+		// auto nwpos = window.getPosition ();
+		// for (Ball& b : balls)
+		// 	b.set_position ({b.position ().x + (wpos - nwpos).x,
+		// 	                 b.position ().y + (wpos - nwpos).y});
+		// wpos = nwpos;
 
 		elapsed += clock.restart();
 		while (elapsed >= update_ms) {
