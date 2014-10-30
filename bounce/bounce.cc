@@ -56,6 +56,11 @@ public:
 	Ball& operator = (Ball&&) = default;
 	~Ball () = default;
 
+	auto color () const
+	{
+		return _circle.getFillColor ();
+	}
+
 	auto radius () const
 	{
 		return _circle.getRadius () + _circle.getOutlineThickness ();
@@ -187,6 +192,25 @@ void drag (Ball& ball, sf::Time interval, float factor)
 	accelerate (ball, interval, f * -direction (v));
 }
 
+void attract (Ball& b1, Ball& b2, sf::Time interval, float factor)
+{
+	const auto x1 = b1.position ();
+	const auto x2 = b2.position ();
+	const auto d = distance (x1, x2);
+	const auto f = factor / (d * d);
+
+	if (b1.color () == b2.color ())
+	{
+		accelerate (b1, interval, f * direction (x2 - x1));
+		accelerate (b2, interval, f * direction (x1 - x2));
+	}
+	else
+	{
+		accelerate (b1, interval, f * -direction (x2 - x1));
+		accelerate (b2, interval, f * -direction (x1 - x2));
+	}
+}
+
 
 
 template <typename ThetaGen>
@@ -222,14 +246,17 @@ Ball random_ball (URNG&& gen, float speed, float radius, unsigned int window_wid
 	             2);
 }
 
-void do_physics (Ball* begin, Ball* end, sf::Time update_ms, float dragf, sf::Vector2f acceleration, unsigned int window_width, unsigned int window_height)
+void do_physics (Ball* begin, Ball* end, sf::Time update_ms, float dragf, float attractf, sf::Vector2f acceleration, unsigned int window_width, unsigned int window_height)
 {
 	for (auto b1 = begin; b1 != end; ++b1)
 		b1->set_position (b1->position () + b1->velocity () * update_ms.asSeconds ());
 
 	for (auto b1 = begin; b1 != end; ++b1)
 		for (auto b2 = b1 + 1; b2 != end; ++b2)
+		{
 			collide (*b1, *b2);
+			attract (*b1, *b2, update_ms, attractf);
+		}
 
 	for (auto b1 = begin; b1 != end; ++b1)
 	{
@@ -246,7 +273,8 @@ int main()
 	const int bpp = 32;
 	const float speed = 300;
 	const sf::Vector2f acceleration = {0.0f, 000.0f};
-	const float dragf = 0.000f;
+	const float dragf = 0.001f;
+	const float attractf = 500000.0f;
 
 //	sf::View view ({0.0f, 0.0f, (float)window_width, (float)window_height});
 	sf::RenderWindow window(sf::VideoMode(window_width, window_height, bpp), "Bouncing ball");
@@ -257,7 +285,7 @@ int main()
 	std::random_device seed_device;
 	std::default_random_engine engine(seed_device());
 
-	Ball balls [400];
+	Ball balls [100];
 	for (Ball& b : balls)
 		b = random_ball (engine, speed, 8, window_width, window_height);
 
@@ -290,7 +318,7 @@ int main()
 
 		elapsed += clock.restart();
 		while (elapsed >= update_ms) {
-			do_physics (std::begin (balls), std::end (balls), update_ms, dragf, acceleration, window_width, window_height);
+			do_physics (std::begin (balls), std::end (balls), update_ms, dragf, attractf, acceleration, window_width, window_height);
 			elapsed -= update_ms;
 		}
 
