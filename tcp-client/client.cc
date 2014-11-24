@@ -3,7 +3,7 @@
 #include <stdexcept>
 #include <limits>
 #include <cstring>
-#include <thread>
+#include <future>
 
 #include "ringbuffer.hh"
 
@@ -90,7 +90,7 @@ int main (int argc, const char* const* argv)
 		error ("Invalid hostname:", hosts);
 
 	in_addr server_address;
-	memcpy (&server_address.s_addr, server->h_addr, sizeof (server_address.s_addr));
+	std::memcpy (&server_address.s_addr, server->h_addr, sizeof (server_address.s_addr));
 
 	sockaddr_in serv_addr = {
 		/* .sin_family = */ AF_INET,
@@ -102,11 +102,16 @@ int main (int argc, const char* const* argv)
 	if (::connect (sockfd, reinterpret_cast <sockaddr*> (&serv_addr), sizeof (serv_addr)) < 0)
 		error ("Error connecting to ", hosts, ":", ports);
 
-	auto receive = std::thread (fd_splice, sockfd, STDOUT_FILENO);
-	fd_splice (STDIN_FILENO, sockfd);
-	::shutdown (sockfd, SHUT_WR);
-	receive.join ();
-	::close (sockfd);
+	auto send = std::async ([&] {
+		fd_splice (STDIN_FILENO, sockfd);
+		::shutdown (sockfd, SHUT_WR);
+	});
+	auto receive = std::async (std::launch::async, [&] {
+		fd_splice (sockfd, STDOUT_FILENO);
+		::close (sockfd);
+	});
+	send.wait ();
+	receive.wait ();
 
 	return EXIT_SUCCESS;
 }
