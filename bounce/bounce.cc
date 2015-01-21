@@ -288,16 +288,10 @@ int main()
 	Ball balls [100];
 	for (Ball& b : balls)
 		b = random_ball (engine, speed, 8, window_width, window_height);
-	window.clear(sf::Color::Black);
 
 	sf::Clock clock;
 	sf::Time elapsed = clock.restart();
-	const sf::Time update_ms = sf::seconds(1.f / 20.f);
-
-	sf::RectangleShape mask ({(float)window_width, (float)window_height});
-	mask.setPosition ({0.0f, 0.0f});
-	mask.setFillColor (sf::Color (0, 0, 0, 5));
-
+	const sf::Time update_ms = sf::seconds(1.f / 120.f);
 	while (window.isOpen()) {
 		sf::Event event;
 		while (window.pollEvent(event)) {
@@ -328,7 +322,7 @@ int main()
 			elapsed -= update_ms;
 		}
 
-		window.draw (mask, sf::BlendMode::BlendAlpha);
+		window.clear(sf::Color(58, 110, 165));
 		for (const Ball& b : balls)
 			draw (window, b);
 		window.display();
