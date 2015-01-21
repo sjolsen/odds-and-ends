@@ -87,7 +87,7 @@ int main (int argc, const char* const* argv)
 
 	auto server = gethostbyname (hosts);
 	if (!server)
-		error ("Invalid hostname:", hosts);
+		error ("Invalid hostname: ", hosts);
 
 	in_addr server_address;
 	std::memcpy (&server_address.s_addr, server->h_addr, sizeof (server_address.s_addr));
