@@ -92,14 +92,18 @@ int main (int argc, const char* const* argv)
 	in_addr server_address;
 	std::memcpy (&server_address.s_addr, server->h_addr, sizeof (server_address.s_addr));
 
-	sockaddr_in serv_addr = {
+	union {
+		sockaddr_in      data;
+		sockaddr_storage storage;
+		sockaddr         addr;
+	} serv_addr = {/* .data = */{
 		/* .sin_family = */ AF_INET,
 		/* .sin_port   = */ ::htons (port),
 		/* .sin_addr   = */ server_address,
 		/* .sin_zero   = */ {}
-	};
+	}};
 
-	if (::connect (sockfd, reinterpret_cast <sockaddr*> (&serv_addr), sizeof (serv_addr)) < 0)
+	if (::connect (sockfd, &serv_addr.addr, sizeof (serv_addr)) < 0)
 		error ("Error connecting to ", hosts, ":", ports);
 
 	auto send = std::async ([&] {
