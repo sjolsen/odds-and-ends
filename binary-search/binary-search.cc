@@ -69,11 +69,11 @@ const T* reference_binary_search (const T* begin, const T* end, const T& value, 
 	return static_cast <const T*> (result);
 }
 
-template <typename T, typename Comp = std::less <T> >
-bool pass_basic (const T* begin, const T* end, const T& value, Comp&& comp = Comp {})
+template <typename T, typename Comp1 = std::less <T>, typename Comp2 = std::less <T> >
+bool pass_basic (const T* begin, const T* end, const T& value, Comp1&& pcomp = Comp1 {}, Comp2&& qcomp = Comp2 {})
 {
-	auto std_result = reference_binary_search (begin, end, value, comp);
-	auto my_result  = stackless_binary_search (begin, end, value, comp);
+	auto std_result = reference_binary_search (begin, end, value, qcomp);
+	auto my_result  = stackless_binary_search (begin, end, value, pcomp);
 
 	if (std_result == nullptr)
 		return my_result.second == false;
@@ -104,6 +104,26 @@ std::ostream& print_pair (std::ostream& os, const std::pair <First, Second>& p)
 	return os << "(" << p.first << ", " << p.second << ")";
 }
 
+template <typename Comp>
+struct counting_comparator
+{
+	Comp comp;
+	int count = 0;
+
+	template <typename... Args>
+	decltype (auto) operator () (Args&&... args)
+	{
+		++count;
+		return comp (std::forward <Args> (args)...);
+	}
+};
+
+template <typename Comp>
+auto make_counting_comparator (Comp comp)
+{
+	return counting_comparator <Comp> {std::move (comp)};
+}
+
 int main ()
 {
 	auto comp = std::less <> {};
@@ -118,11 +138,14 @@ int main ()
 		"the", "dog", "is", "crazy"
 	};
 
+	auto pcomp = make_counting_comparator (comp);
+	auto qcomp = make_counting_comparator (comp);
+
 	std::sort (std::begin (data), std::end (data), comp);
 	for (auto a = std::begin (data); a != std::end (data); ++a)
 		for (auto b = a; b != std::end (data); ++b)
 			for (auto&& s : tests)
-				if (!pass_basic (&*a, &*b, s, comp))
+				if (!pass_basic (&*a, &*b, s, pcomp, qcomp))
 				{
 					std::cerr << "Failed on seq = ";
 					print_sequence (std::cerr, a, b);
@@ -137,4 +160,7 @@ int main ()
 					std::cerr << ", " << q;
 					std::cerr << std::endl;
 				}
+
+	std::cout << "stackless_binary_search: " << pcomp.count << " comparisons" << std::endl;
+	std::cout << "reference_binary_search: " << qcomp.count << " comparisons" << std::endl;
 }
