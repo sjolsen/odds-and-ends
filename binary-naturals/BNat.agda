@@ -191,7 +191,3 @@ module BNat where
   --         loop₁ (denom , scale) with denom <₂? a
   --         ... | yes _ = loop₁ ((lshft denom) , (lshft scale))
   --         ... | no  _ = denom , scale
-
-  ten = bits (bits (bits (bit 1b) 0b) 1b) 0b
-  seven = bits (bits (bits (bit 0b) 1b) 1b) 1b
-  three = ten -₂ seven
