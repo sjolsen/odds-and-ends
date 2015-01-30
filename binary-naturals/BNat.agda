@@ -38,37 +38,15 @@ module BNat where
   not 1b = 0b
 
 
-  ℕ2ⁿ : ℕ → ℕ
-  ℕ2ⁿ zero = 1
-  ℕ2ⁿ (suc n) = (ℕ2ⁿ n) + (ℕ2ⁿ n)
-
-  1≤2ⁿ : ∀ {n} → 1 ≤ ℕ2ⁿ n
-  1≤2ⁿ {zero} = s≤s z≤n
-  1≤2ⁿ {suc n} = ≤-trans (1≤2ⁿ {n}) a≤a+b
-
-  -- fromℕ′ : ∀ {i : ℕ} (n : ℕ) (_ : n ≤ ℕ2ⁿ i) → ℕ₂ {i}
-  -- fromℕ′ {zero} zero           _   = 0₂
-  -- fromℕ′ {zero} (suc zero)     _   = 1₂
-  -- fromℕ′ {zero} (suc (suc n″)) n≤1 = contradiction n≤1 (λ {(s≤s ())})
-  -- fromℕ′ {suc i} n n≤2¹⁺ⁱ = uncurry′ bits $ map (uncurry fromℕ′) id $ divmod₂ {i} n n≤2¹⁺ⁱ
-  --   where divmod₂ : ∀ {i : ℕ} (n : ℕ) (_ : n ≤ ℕ2ⁿ (suc i)) → (Σ ℕ (λ n → n ≤ ℕ2ⁿ i)) × Bit
-  --         divmod₂          zero                 _   = ((0 , z≤n)     , 0b)
-  --         divmod₂          (suc zero)           _   = ((0 , z≤n)     , 1b)
-  --         divmod₂ {zero}   (suc (suc zero))     _   = ((1 , s≤s z≤n) , 0b)
-  --         divmod₂ {zero}   (suc (suc (suc n‴))) n≤2 = contradiction n≤2 (λ {(s≤s (s≤s ()))})
-  --         divmod₂ {suc i′} (suc (suc n″))       n≤2¹⁺ⁱ with divmod₂ {i′} n″ {!!}
-  --         ... | ((a , b) , c) = ((suc a , ≤-subst₁ (triangle b (1≤2ⁿ {i′})) (sym suca=a+1)) , c)
-  --           where suca=a+1 : suc a ≡ a + 1
-  --                 suca=a+1 = +-comm {1} {a}
-
-  -- fromℕ : ∀ (n : ℕ) → ℕ₂ {⌈ℕLog₂ n ⌉}
-  -- fromℕ 0 = 0₂
-  -- fromℕ 1 = 1₂
-  -- fromℕ n = uncurry′ bits $ map fromℕ id $ divmod₂ n
-  --   where divmod₂ : ℕ → ℕ × Bit
-  --         divmod₂ 0 = (0 , 0b)
-  --         divmod₂ 1 = (0 , 1b)
-  --         divmod₂ (suc (suc n)) = map suc id $ divmod₂ n
+  fromℕ : ∀ {i} (n : ℕ) → ℕ₂ {i}
+  fromℕ 0 = 0₂
+  fromℕ 1 = 1₂
+  fromℕ {zero}  (suc (suc n)) = fromℕ (suc n)
+  fromℕ {suc i} n = uncurry′ bits $ map fromℕ id $ divmod₂ n
+    where divmod₂ : ℕ → ℕ × Bit
+          divmod₂ 0 = (0 , 0b)
+          divmod₂ 1 = (0 , 1b)
+          divmod₂ (suc (suc n)) = map suc id $ divmod₂ n
 
 
   showBit : Bit → Char
@@ -162,10 +140,10 @@ module BNat where
   _-₂_ : ∀ {i} (m n : ℕ₂ {i}) → {m≮n : ¬ m <₂ n} → ℕ₂ {i}
   _-₂_ m n {m≮n} = sub m n 0b
     where subb : Bit → Bit → Bit → Bit × Bit
-          subb 0b 0b c̄ = (c̄     , c̄)
-          subb 0b 1b c̄ = (not c̄ , 1b)
-          subb 1b 0b c̄ = (not c̄ , 0b)
-          subb 1b 1b c̄ = (c̄     , c̄)
+          subb 0b 0b c̄ = (c̄  , c̄)
+          subb 0b 1b c̄ = (1b , not c̄)
+          subb 1b 0b c̄ = (0b , not c̄)
+          subb 1b 1b c̄ = (c̄  , c̄)
           sub : ∀ {i} → ℕ₂ {i} → ℕ₂ {i} → Bit → ℕ₂ {i}
           sub (bit     m) (bit     n) c̄ = bit $ proj₂ (subb m n c̄)
           sub (bits ms m) (bits ns n) c̄ = uncurry′ bits $ map (sub ms ns) id $ subb m n c̄
@@ -213,3 +191,7 @@ module BNat where
   --         loop₁ (denom , scale) with denom <₂? a
   --         ... | yes _ = loop₁ ((lshft denom) , (lshft scale))
   --         ... | no  _ = denom , scale
+
+  ten = bits (bits (bits (bit 1b) 0b) 1b) 0b
+  seven = bits (bits (bits (bit 0b) 1b) 1b) 1b
+  three = ten -₂ seven
