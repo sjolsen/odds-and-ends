@@ -22,7 +22,7 @@ module BNat where
     1b : Bit
 
   data ℕ₂ : {i : ℕ} → Set where
-    bit  :                       Bit → ℕ₂ {zero}
+    bit  :                      Bit → ℕ₂ {zero}
     bits : ∀ {i : ℕ} → ℕ₂ {i} → Bit → ℕ₂ {suc i}
 
   0₂ : ∀ {i} → ℕ₂ {i}
@@ -149,32 +149,16 @@ module BNat where
           sub (bits ms m) (bits ns n) c̄ = uncurry′ bits $ map (sub ms ns) id $ subb m n c̄
 
 
-  data zerop : ∀ {i} → Pred (ℕ₂ {i}) Level.zero where
-    zerop₀ :                           zerop (bit     0b)
-    zerop₁ : ∀ {i ns} → zerop {i} ns → zerop (bits ns 0b)
-
-  zerop-elim : ∀ {i ns} → zerop {suc i} (bits ns 0b) → zerop {i} ns
-  zerop-elim (zerop₁ ns=0) = ns=0
-
-  zero? : ∀ {i} → Relation.Unary.Decidable (zerop {i})
-  zero? (bit 0b) = yes zerop₀
-  zero? (bit 1b) = no (λ ())
-  zero? (bits ns n) with zero? ns | n
-  ... | yes ns=0 | 0b = yes (zerop₁ ns=0)
-  ... | yes ns=0 | 1b = no (λ ())
-  ... | no  ns≠0 | 1b = no (λ ())
-  ... | no  ns≠0 | 0b = no (contraposition zerop-elim ns≠0)
-
   Nonzero : ∀ {i} → ℕ₂ {i} → Set
-  Nonzero n = ¬ zerop n
+  Nonzero n = ¬ n ≡ 0₂
 
   pred₂ : ∀ {i} (n : ℕ₂ {i}) {n≠0 : Nonzero n} → ℕ₂ {i}
-  pred₂ (bit     0b) {n≠0} = contradiction zerop₀ n≠0
+  pred₂ (bit     0b) {n≠0} = contradiction refl n≠0
   pred₂ (bit     1b)       = bit 0b
-  pred₂ (bits ns 0b) {n≠0} = bits (pred₂ ns {contraposition zerop₁ n≠0}) 1b
+  pred₂ (bits ns 0b) {n≠0} = bits (pred₂ ns {contraposition (λ ns=0 → cong₂ bits ns=0 refl) n≠0}) 1b
   pred₂ (bits ns 1b)       = bits ns 0b
 
-  ⌈log₂_⌉ : ∀ {i} (n : ℕ₂ {i}) {_ : ¬ zerop n} → ℕ₂ {i}
+  ⌈log₂_⌉ : ∀ {i} (n : ℕ₂ {i}) {_ : Nonzero n} → ℕ₂ {i}
   ⌈log₂ n ⌉ {n≠0} = len (pred₂ n {n≠0})
     where len : ∀ {i} → ℕ₂ {i} → ℕ₂ {i}
           len (bit     n) = bit n
