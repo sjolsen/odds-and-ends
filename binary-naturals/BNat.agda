@@ -11,20 +11,18 @@ module BNat where
 
   _+₂_ : ∀ {i} → ℕ₂ {i} → ℕ₂ {i} → ℕ₂ {suc i}
   m +₂ n = add m n 0b
-    where addb : Bit → Bit → Bit → Bit × Bit
-          addb 0b 0b c  = (0b , c)
-          addb 0b 1b 0b = (0b , 1b)
-          addb 0b 1b 1b = (1b , 0b)
-          addb 1b 0b 0b = (0b , 1b)
-          addb 1b 0b 1b = (1b , 0b)
-          addb 1b 1b c  = (1b , c)
+    where addb : Bit → Bit → Bit → Bit × Bit -- carry in first
+          addb 0b 0b c = (0b , c)
+          addb 0b 1b c = (0b , not c)
+          addb 1b 0b c = (0b , not c)
+          addb 1b 1b c = (1b , c)
           add : ∀ {i} → ℕ₂ {i} → ℕ₂ {i} → Bit → ℕ₂ {suc i}
           add (bit     m) (bit     n) c = uncurry′ bits $ map bit         id $ addb m n c
           add (bits ms m) (bits ns n) c = uncurry′ bits $ map (add ms ns) id $ addb m n c
 
   _-₂_ : ∀ {i} (m n : ℕ₂ {i}) → {m≮n : ¬ m <₂ n} → ℕ₂ {i}
   _-₂_ m n {m≮n} = sub m n 0b
-    where subb : Bit → Bit → Bit → Bit × Bit
+    where subb : Bit → Bit → Bit → Bit × Bit -- carry in first
           subb 0b 0b c̄ = (c̄  , c̄)
           subb 0b 1b c̄ = (1b , not c̄)
           subb 1b 0b c̄ = (0b , not c̄)

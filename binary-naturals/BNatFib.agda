@@ -19,7 +19,7 @@ module BNatFib where
   ... | (ms′ , ns′) = ((bits ms′ m) , (bits ns′ n))
 
   plus : ℕ₂′ → ℕ₂′ → ℕ₂′
-  plus (lift m) (lift n) = lift (uncurry _+₂_ $ zero-extend m n)
+  plus (lift m) (lift n) = lift (uncurry′ _+₂_ $ zero-extend m n)
 
   fibstep : ℕ₂′ × ℕ₂′ → ℕ₂′ × ℕ₂′
   fibstep (m , n) = (n , plus m n)
