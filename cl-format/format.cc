@@ -258,14 +258,15 @@ std::size_t tstrlen (const char (&) [N])
 }
 
 #define tprintf(fmt, ...) ([&] { \
+	static constexpr const char _fmt [] = fmt; \
 	struct string_t { \
-		const char* const begin = fmt; \
-		const char* const end   = fmt + tstrlen (fmt) - 1; \
+		const char* const begin = _fmt; \
+		const char* const end   = _fmt + tstrlen (_fmt) - 1; \
 		constexpr \
 		char operator [] (std::size_t i) const \
 		{ return begin [i]; } \
 	}; \
-	formatter <string_t, 0, tstrlen (fmt) - 1, 0, false>::template format <char> (__VA_ARGS__); \
+	formatter <string_t, 0, tstrlen (_fmt) - 1, 0, false>::template format <char> (__VA_ARGS__); \
 } ())
 
 
