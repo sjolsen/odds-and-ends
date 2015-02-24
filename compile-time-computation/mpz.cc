@@ -157,8 +157,8 @@ using bbbbig      = mul <bigbig, bigbig>;
 int main ()
 {
 	std::cout << from_integer <zero>::value ()        << std::endl;
-	std::cout << from_integer <twenty_five>::value () << std::endl;
 	std::cout << from_integer <five>::value ()        << std::endl;
+	std::cout << from_integer <twenty_five>::value () << std::endl;
 	std::cout << from_integer <biggest>::value ()     << std::endl;
 	std::cout << from_integer <biggest2>::value ()    << std::endl;
 	std::cout << from_integer <bigbig>::value ()      << std::endl;
