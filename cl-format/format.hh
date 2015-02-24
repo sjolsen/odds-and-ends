@@ -86,7 +86,7 @@ struct parse_flag_impl <Str, end, end>
 template <typename Str, std::size_t begin, std::size_t end>
 struct parse_flag_impl
 {
-	using pparse = typename std::conditional <Str {} [begin] == 'a',
+	using pparse = typename std::conditional <Str {} [begin] == 'a' || Str {} [begin] == 'A',
 	                                          partial_parse <begin + 1, arg_type::t_auto, auto_spec_t>,
 	               typename std::conditional <Str {} [begin] == '{',
 	                                          partial_parse <begin + 1, arg_type::t_loop_in, void>,
