@@ -266,7 +266,7 @@ std::size_t tstrlen (const char (&) [N])
 		const char* const end   = _fmt + tstrlen (_fmt) - 1; \
 		constexpr \
 		char operator [] (std::size_t i) const \
-		{ return begin [i]; } \
+		{ return this->begin [i]; } \
 	}; \
 	formatter <string_t, 0, tstrlen (_fmt) - 1, 0, false>::template format <char> (__VA_ARGS__); \
 } ())
