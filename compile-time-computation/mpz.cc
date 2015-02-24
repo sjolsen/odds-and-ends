@@ -86,26 +86,23 @@ struct mul_row <0, n, c> {
 };
 
 template <typename m, typename n>
-struct mul_nz;
-
-template <typename m, typename n>
-struct mul_impl {
-	using value = mul_nz <m, n>;
-};
-
-template <typename n>
-struct mul_impl <zero, n> {
-	using value = zero;
-};
+struct mul_impl;
 
 template <typename m, typename n>
 using mul = typename mul_impl <m, n>::value;
 
 template <typename m, typename n>
-struct mul_nz {
+struct mul_impl {
 	using x = mul_row <m::lsw, n, 0>;
-	static const std::uint32_t lsw = x::lsw;
-	using rest = add <mul <typename m::rest, n>, typename x::rest>;
+	struct value {
+		static const std::uint32_t lsw = x::lsw;
+		using rest = add <mul <typename m::rest, n>, typename x::rest>;
+	};
+};
+
+template <typename n>
+struct mul_impl <zero, n> {
+	using value = zero;
 };
 
 
