@@ -118,14 +118,11 @@ template <std::uintmax_t n>
 using integer = typename integer_impl <n>::value;
 
 template <std::uintmax_t n>
-struct integer_impl2 {
-	static const std::uint32_t lsw = n & 0xFFFFFFFF;
-	using rest = integer <(n >> 32)>;
-};
-
-template <std::uintmax_t n>
 struct integer_impl {
-	using value = integer_impl2 <n>;
+	struct value {
+		static const std::uint32_t lsw = n & 0xFFFFFFFF;
+		using rest = integer <(n >> 32)>;
+	};
 };
 
 template <>
