@@ -76,20 +76,83 @@ struct factorial_impl <zero> {
 
 
 #include <iostream>
+#include <memory>
 
-using one   = suc <zero>;
-using two   = suc <one>;
-using three = suc <two>;
-using four  = suc <three>;
-using five  = suc <four>;
+struct nil {};
+
+template <typename n>
+struct alln_n {
+	using car = n;
+	using cdr = alln_n <suc <n>>;
+};
+
+using alln = alln_n <zero>;
+
+
+
+template <typename n, typename l>
+struct take_impl;
+
+template <typename n, typename l>
+using take = typename take_impl <n, l>::value;
+
+template <typename n, typename l>
+struct take_impl {
+	struct value {
+		using car = typename l::car;
+		using cdr = take <pred <n>, typename l::cdr>;
+	};
+};
+
+template <typename l>
+struct take_impl <zero, l> {
+	using value = nil;
+};
+
+
+
+struct node;
+using list = std::unique_ptr <node>;
+
+struct node {
+	mpz_class car;
+	list cdr;
+
+	node (mpz_class car, list cdr)
+		: car (std::move (car)),
+		  cdr (std::move (cdr))
+	{
+	}
+};
+
+template <typename l>
+struct from_list {
+	static list value () {
+		auto car = from_integer <typename l::car>::value ();
+		using cdr = typename l::cdr;
+		return std::make_unique <node> (std::move (car), from_list <cdr>::value ());
+	}
+};
+
+template <>
+struct from_list <nil> {
+	static list value () {
+		return nullptr;
+	}
+};
+
+
+
+std::ostream& operator << (std::ostream& os, const list& l)
+{
+	if (l)
+		os << l->car << " : " << l->cdr;
+	else
+		os << "[]";
+	return os;
+}
 
 int main ()
 {
-	std::cout << from_integer <factorial <zero> >::value ()  << std::endl;
-	std::cout << from_integer <factorial <one> >::value ()   << std::endl;
-	std::cout << from_integer <factorial <two> >::value ()   << std::endl;
-	std::cout << from_integer <factorial <three> >::value () << std::endl;
-	std::cout << from_integer <factorial <four> >::value ()  << std::endl;
-	std::cout << from_integer <factorial <five> >::value ()  << std::endl;
-
+	std::cout << from_list <take <integer <20>, alln>>::value () << std::endl;
 }
