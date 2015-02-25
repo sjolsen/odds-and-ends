@@ -143,6 +143,27 @@ struct from_list <nil> {
 
 
 
+template <template <typename> class f, typename l>
+struct map_impl;
+
+template <template <typename> class f, typename l>
+using map = typename map_impl <f, l>::value;
+
+template <template <typename> class f, typename l>
+struct map_impl {
+	struct value {
+		using car = f <typename l::car>;
+		using cdr = map <f, typename l::cdr>;
+	};
+};
+
+template <template <typename> class f>
+struct map_impl <f, nil> {
+	using value = nil;
+};
+
+
+
 std::ostream& operator << (std::ostream& os, const list& l)
 {
 	if (l)
@@ -154,5 +175,5 @@ std::ostream& operator << (std::ostream& os, const list& l)
 
 int main ()
 {
-	std::cout << from_list <take <integer <20>, alln>>::value () << std::endl;
+	std::cout << from_list <take <integer <20>, map <factorial, alln>>>::value () << std::endl;
 }
