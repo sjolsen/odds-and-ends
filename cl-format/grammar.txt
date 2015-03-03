@@ -13,7 +13,37 @@
 
 <colon-at-specifier> ::= "" | "@" | ":" | ":@" | "@:"
 
-<directive-specifier> ::=
+<directive-specifier> ::= <character-directive>
+                        | <newline-directive>
+                        | <fresh-line-directive>
+                        | <page-directive>
+                        | <tilde-directive>
+                        | <radix-directive>
+                        | <decimal-directive>
+                        | <binary-directive>
+                        | <octal-directive>
+                        | <hexadecimal-directive>
+                        | <fixed-format-fp-directive>
+                        | <exponential-fp-directive>
+                        | <general-fp-directive>
+                        | <monetary-fp-directive>
+                        | <aesthetic-directive>
+                        | <standard-directive>
+                        | <write-directive>
+                        | <conditional-newline-directive>
+                        | <logical-block-directive>
+                        | <indent-directive>
+                        | <call-function-directive>
+                        | <tabulate-directive>
+                        | <justification-directive>
+                        | <goto-directive>
+                        | <conditional-directive>
+                        | <iteration-directive>
+                        | <recursive-directive>
+                        | <case-conversion-directive>
+                        | <plural-directive>
+                        | <escape-upward-directive>
+                        | <ignored-newline-directive>
 
 <character-directive> ::= <colon-at-specifier> ("c" | "C")
 
