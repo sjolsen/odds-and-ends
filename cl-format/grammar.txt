@@ -1,0 +1,116 @@
+<format-control> ::= [<simple-text>] <directive-headed-format-control>
+                   | ""
+
+<directive-headed-format-control> ::= <directive> <format-control>
+
+<simple-text> ::= <nontilde-character>+
+
+<directive> ::= "~" <directive-specifier>
+
+<colon-specifier> ::= "" | ":"
+
+<at-specifier> ::= "" | "@"
+
+<colon-at-specifier> ::= "" | "@" | ":" | ":@" | "@:"
+
+<directive-specifier> ::=
+
+<character-directive> ::= <colon-at-specifier> ("c" | "C")
+
+<newline-directive> ::= [<numeric-argument>] "%"
+
+<fresh-line-directive> ::= [<numeric-argument>] "&"
+
+<page-directive> ::= [<numeric-argument>] "|"
+
+<tilde-directive> ::= [<numeric-argument>] "~"
+
+<radix-directive> ::= [<numeric-argument> ["," <decimal-parameters>]] <colon-at-specifier> ("r" | "R")
+
+<decimal-parameters> ::= <numeric-argument> ["," <character-argument> ["," <character-argument> ["," <numeric-argument>]]]
+
+<decimal-directive> ::= [<decimal-parameters>] <colon-at-specifier> ("d" | "D")
+
+<binary-directive> ::= [<decimal-parameters>] <colon-at-specifier> ("b" | "B")
+
+<octal-directive> ::= [<decimal-parameters>] <colon-at-specifier> ("o" | "O")
+
+<hexadecimal-directive> ::= [<decimal-parameters>] <colon-at-specifier> ("x" | "X")
+
+<fixed-format-fp-directive> ::= [<numeric-argument> ["," <numeric-argument> ["," <numeric-argument> ["," <character-argument> ["," <character-argument>]]]]] <at-specifier> ("f" | "F")
+
+<exponential-fp-directive> ::= [<numeric-argument> ["," <numeric-argument> ["," <numeric-argument> ["," <numeric-argument> ["," <character-argument> ["," <character-argument> ["," <character-argument>]]]]]]] <at-specifier> ("e" | "E")
+
+<general-fp-directive> ::= [<numeric-argument> ["," <numeric-argument> ["," <numeric-argument> ["," <numeric-argument> ["," <character-argument> ["," <character-argument> ["," <character-argument>]]]]]]] <at-specifier> ("g" | "G")
+
+<monetary-fp-directive> ::= [<numeric-argument> ["," <numeric-argument> ["," <numeric-argument> ["," <character-argument>]]]] <colon-at-specifier> "$"
+
+<aesthetic-parameters> ::= <numeric-argument> ["," <numeric-argument> ["," <numeric-argument> ["," <character-argument>]]]
+
+<aesthetic-directive> ::= [<aesthetic-parameters>] <colon-at-specifier> ("a" | "A")
+
+<standard-directive> ::= [<aesthetic-parameters>] <colon-at-specifier> ("s" | "S")
+
+<write-directive> ::= <colon-at-specifier> ("w" | "W")
+
+<conditional-newline-directive> ::= <colon-at-specifier> "_"
+
+<logical-block-directive> ::= <colon-at-specifier> "<" <logical-block-contents> "~" (":" | "@:" | ":@") ">"
+
+<logical-block-contents> ::= <format-control>
+                           | [<simple-text>] <at-clause-separator> <format-control> [<clause-separator> [simple-text]]
+
+<indent-directive> ::= [<numeric-argument>] <colon-specifier> ("i" | "I")
+
+<generic-argument-list> ::= <nonempty-generic-argument-list>
+                          | ""
+
+<nonempty-generic-argument-list> ::= <generic-argument> ["," <nonempty-generic-argument-list>]
+
+<call-function-directive> ::= <generic-argument-list> <colon-at-specifier> "/" <nonslash-character>+ "/"
+
+<tabulate-directive> ::= [<numeric-argument> ["," <numeric-argument>]] <colon-at-specifier> ("t" | "T")
+
+<justification-directive> ::= [<aesthetic-parameters>] <colon-at-specifier> "<" <justification-contents> "~>"
+
+<justification-contents> ::= [<format-control> "~:;"] <clause-list>
+
+<clause-list> ::= <format-control> <clause-separator> <clause-list>
+                | ""
+
+<goto-directive> ::= [<numeric-argument>] <colon-at-specifier> "*"
+
+<conditional-directive> ::= [<numeric-argument>] "[" <clause-list> ["~:;" <format-control>] "~]"
+                          | ":[" <format-control> <clause-separator> <format-control> "~]"
+                          | "@[" <format-control> "~]"
+
+<iteration-directive> ::= [<numeric-argument>] <colon-at-specifier> "{" <format-control> "~" <colon-specifier> "}"
+
+<recursive-directive> ::= <at-specifier> "?"
+
+<case-conversion-directive> ::= <colon-at-specifier> "(" <format-control> "~)"
+
+<plural-directive> ::= <colon-at-specifier> ("p" | "P")
+
+<clause-separator> ::= "~;"
+
+<at-clause-separator> ::= "~" ["@"] ";"
+
+<escape-upward-directive> ::= [<numeric-argument>] <colon-specifier> "^"
+
+<ignored-newline-directive> ::= (":" | "@") <newline>
+
+<numeric-argument> ::= <decimal-number>
+                     | <argument-placeholder>
+
+<decimal-number> ::= ["+" | "-"] <digit>+
+
+<character-argument> ::= "'" <character>
+                       | <argument-placeholder>
+
+<generic-argument> ::= <decimal-number>
+                     | "'" <character>
+                     | <argument-placeholder>
+
+<argument-placeholder> ::= "v" | "V"
+                         | "#"
