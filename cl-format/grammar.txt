@@ -103,7 +103,7 @@
 
 <justification-directive> ::= [<aesthetic-parameters>] <colon-at-specifier> "<" <justification-contents> "~>"
 
-<justification-contents> ::= [<format-control> "~:;"] <clause-list>
+<justification-contents> ::= [<format-control> <colon-clause-separator>] <clause-list>
 
 <clause-list> ::= <format-control> <clause-separator> <clause-list>
                 | ""
@@ -125,6 +125,8 @@
 <clause-separator> ::= "~;"
 
 <at-clause-separator> ::= "~" ["@"] ";"
+
+<colon-clause-separator> ::= "~" [<numeric-argument> ["," <numeric-argument>]] ":;"
 
 <escape-upward-directive> ::= [<numeric-argument>] <colon-specifier> "^"
 
