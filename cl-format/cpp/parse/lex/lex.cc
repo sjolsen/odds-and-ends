@@ -53,30 +53,6 @@ namespace cl_format {
 					return {arg_t::unspecified_tag};
 				}
 
-				control_component_t make_text_cc (string_t s)
-				{
-					control_component_t result;
-					result.type = control_component_t::simple_text_tag;
-					result.simple_text = s;
-					return result;
-				}
-
-				control_component_t make_directive_cc (directive_t d)
-				{
-					control_component_t result;
-					result.type = control_component_t::directive_tag;
-					result.directive = d;
-					return result;
-				}
-
-				control_component_t make_funcall_cc (funcall_directive_t f)
-				{
-					control_component_t result;
-					result.type = control_component_t::funcall_directive_tag;
-					result.funcall_directive = f;
-					return result;
-				}
-
 
 				std::tuple <arglist_t*, const char*>
 				get_args (const char* begin, const char* end, new_arglist_t new_arglist)
@@ -127,7 +103,7 @@ namespace cl_format {
 							throw uninformative_exception {};
 						auto specifier = string_t {begin + 1, point};
 						auto directive = funcall_directive_t {args, colon, at, specifier};
-						return std::make_tuple (make_funcall_cc (directive), point + 1);
+						return std::make_tuple (control_component_t {directive}, point + 1);
 					}
 					else {
 						if (begin == end)
@@ -135,7 +111,7 @@ namespace cl_format {
 						auto specifier = *begin;
 						throw uninformative_exception {}; // TODO: Check specifier
 						auto directive = directive_t {args, colon, at, specifier};
-						return std::make_tuple (make_directive_cc (directive), begin + 1);
+						return std::make_tuple (control_component_t {directive}, begin + 1);
 					}
 				}
 
@@ -143,7 +119,8 @@ namespace cl_format {
 				get_simple_text (const char* begin, const char* end)
 				{
 					auto point = std::find (begin + 1, end, '~');
-					return std::make_tuple (make_text_cc ({begin, point}), point);
+					auto str = string_t {begin, point};
+					return std::make_tuple (control_component_t {str}, point);
 				}
 
 				std::tuple <format_control_t*, const char*>

@@ -29,6 +29,12 @@ namespace cl_format {
 			struct arglist_t {
 				arg_t      first;
 				arglist_t* rest;
+
+				arglist_t (arg_t first, arglist_t* rest)
+					: first (first),
+					  rest  (rest)
+				{
+				}
 			};
 
 			struct directive_t {
@@ -56,11 +62,35 @@ namespace cl_format {
 					directive_t         directive;
 					funcall_directive_t funcall_directive;
 				};
+
+				control_component_t (string_t s)
+					: type (simple_text_tag),
+					  simple_text (s)
+				{
+				}
+
+				control_component_t (directive_t d)
+					: type (directive_tag),
+					  directive (d)
+				{
+				}
+
+				control_component_t (funcall_directive_t f)
+					: type (funcall_directive_tag),
+					  funcall_directive (f)
+				{
+				}
 			};
 
 			struct format_control_t {
 				control_component_t first;
 				format_control_t*   rest;
+
+				format_control_t (control_component_t first, format_control_t* rest)
+					: first (first),
+					  rest  (rest)
+				{
+				}
 			};
 
 
