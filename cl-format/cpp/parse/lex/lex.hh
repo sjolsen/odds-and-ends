@@ -63,6 +63,10 @@ namespace cl_format {
 					funcall_directive_t funcall_directive;
 				};
 
+				control_component_t ()
+				{
+				}
+
 				control_component_t (string_t s)
 					: type (simple_text_tag),
 					  simple_text (s)

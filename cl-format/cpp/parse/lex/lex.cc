@@ -1,6 +1,10 @@
 #include "lex.hh"
 #include <algorithm>
 #include <tuple>
+#include <cctype>
+#include <cerrno>
+#include <cstdlib>
+#include <climits>
 
 namespace
 {
@@ -16,6 +20,33 @@ namespace
 			cursor = next;
 		}
 		return prev;
+	}
+
+	bool valid_ascii_specifiers [128] = {
+		/*            0    1    2    3    4    5    6    7       8    9    A    B    C    D    E    F
+		   0x00       0,   0,   0,   0,   0,   0,   0,   0,      0,   0, '\n',  0,   0,   0,   0,   0,
+		   0x10       0,   0,   0,   0,   0,   0,   0,   0,      0,   0,   0,   0,   0,   0,   0,   0,
+		   0x20       0,   0,   0,   0, '$', '%', '&',   0,    '(', ')', '*',   0,   0,   0,   0, '/',
+		   0x30       0,   0,   0,   0,   0,   0,   0,   0,      0,   0,   0, ';', '<',   0, '>', '?',
+		   0x40       0, 'A', 'B', 'C', 'D', 'E', 'F', 'G',      0, 'I',   0,   0,   0,   0,   0, 'O',
+		   0x50     'P',   0, 'R', 'S', 'T',   0,   0, 'W',    'X',   0,   0, '[',   0, ']', '^', '_',
+		   0x60       0, 'a', 'b', 'c', 'd', 'e', 'f', 'g',      0, 'i',   0,   0,   0,   0,   0, 'o',
+		   0x70     'p',   0, 'r', 's', 't',   0,   0, 'w',    'x',   0,   0, '{', '|', '}', '~',   0  */
+
+		/*            0    1    2    3    4    5    6    7       8    9    A    B    C    D    E    F */
+		/* 0x00 */    0,   0,   0,   0,   0,   0,   0,   0,      0,   0,   1,   0,   0,   0,   0,   0,
+		/* 0x10 */    0,   0,   0,   0,   0,   0,   0,   0,      0,   0,   0,   0,   0,   0,   0,   0,
+		/* 0x20 */    0,   0,   0,   0,   1,   1,   1,   0,      1,   1,   1,   0,   0,   0,   0,   1,
+		/* 0x30 */    0,   0,   0,   0,   0,   0,   0,   0,      0,   0,   0,   1,   1,   0,   1,   1,
+		/* 0x40 */    0,   1,   1,   1,   1,   1,   1,   1,      0,   1,   0,   0,   0,   0,   0,   1,
+		/* 0x50 */    1,   0,   1,   1,   1,   0,   0,   1,      1,   0,   0,   1,   0,   1,   1,   1,
+		/* 0x60 */    0,   1,   1,   1,   1,   1,   1,   1,      0,   1,   0,   0,   0,   0,   0,   1,
+		/* 0x70 */    1,   0,   1,   1,   1,   0,   0,   1,      1,   0,   0,   1,   1,   1,   1,   0
+	};
+
+	bool valid_specifier (char c)
+	{
+		return valid_ascii_specifiers [c];
 	}
 }
 
@@ -54,10 +85,80 @@ namespace cl_format {
 				}
 
 
+				std::tuple <int, const char*>
+				get_decimal (const char* begin, const char* end)
+				{
+					if (begin == end)
+						throw uninformative_exception {};
+
+					errno = 0;
+					char* point = nullptr;
+					long result = std::strtol (begin, &point, 10);
+					if (errno != 0 || begin == point)
+						throw uninformative_exception {};
+					if (result < INT_MIN || INT_MAX < result)
+						throw uninformative_exception {};
+
+					return std::make_tuple (static_cast <int> (result), point);
+				}
+
+				std::tuple <arglist_t*, const char*>
+				_get_args (const char* begin, const char* end, new_arglist_t new_arglist, arglist_t* acc)
+				{
+					if (begin == end)
+						return std::make_tuple (acc, begin);
+
+					switch (*begin) {
+						case ',':
+							return _get_args (begin + 1, end, new_arglist, new_arglist (make_unspecified_arg (), acc));
+						case 'V':
+						case 'v': {
+							acc = new_arglist (make_vee_arg (), acc);
+							if (begin + 1 == end || begin [1] != ',')
+								return std::make_tuple (acc, begin + 1);
+							else
+								return _get_args (begin + 2, end, new_arglist, acc);
+						}
+						case '#': {
+							acc = new_arglist (make_hash_arg (), acc);
+							if (begin + 1 == end || begin [1] != ',')
+								return std::make_tuple (acc, begin + 1);
+							else
+								return _get_args (begin + 2, end, new_arglist, acc);
+						}
+						case '\'': {
+							if (begin + 1 == end)
+								throw uninformative_exception {};
+							acc = new_arglist (make_char_arg (begin [1]), acc);
+							if (begin + 2 == end || begin [2] != ',')
+								return std::make_tuple (acc, begin + 2);
+							else
+								return _get_args (begin + 3, end, new_arglist, acc);
+						}
+						case '-':
+						case '+':
+						default: {
+							if (std::isdigit (*begin)) {
+								int d;
+								std::tie (d, begin) = get_decimal (begin, end);
+								acc = new_arglist (make_decimal_arg (d), acc);
+								if (begin == end || begin [0] != ',')
+									return std::make_tuple (acc, begin);
+								else
+									return _get_args (begin + 1, end, new_arglist, acc);
+							}
+							else
+								return std::make_tuple (acc, begin);
+						}
+					}
+				}
+
 				std::tuple <arglist_t*, const char*>
 				get_args (const char* begin, const char* end, new_arglist_t new_arglist)
 				{
-					throw uninformative_exception {}; // TODO
+					arglist_t* args;
+					std::tie (args, begin) = _get_args (begin, end, new_arglist, nullptr);
+					return std::make_tuple (fr_reverse (args), begin);
 				}
 
 				std::tuple <bool, bool, const char*>
@@ -109,7 +210,8 @@ namespace cl_format {
 						if (begin == end)
 							throw uninformative_exception {};
 						auto specifier = *begin;
-						throw uninformative_exception {}; // TODO: Check specifier
+						if (!valid_specifier (specifier))
+							throw uninformative_exception {};
 						auto directive = directive_t {args, colon, at, specifier};
 						return std::make_tuple (control_component_t {directive}, begin + 1);
 					}
@@ -132,10 +234,16 @@ namespace cl_format {
 				{
 					if (begin == end)
 						return std::make_tuple (acc, begin);
-					if (begin [0] == '~')
-						throw uninformative_exception {}; // TODO
-					else
-						throw uninformative_exception {}; // TODO
+					if (*begin == '~') {
+						control_component_t control;
+						std::tie (control, begin) = get_directive (begin, end, new_arglist);
+						return _lexer (begin, end, new_arglist, new_control, new_control (control, acc));
+					}
+					else {
+						control_component_t control;
+						std::tie (control, begin) = get_simple_text (begin, end);
+						return _lexer (begin, end, new_arglist, new_control, new_control (control, acc));
+					}
 				}
 
 			}
@@ -146,9 +254,11 @@ namespace cl_format {
 			       new_arglist_t new_arglist,
 			       new_control_t new_control)
 			{
-				auto rev = _lexer (begin, end, new_arglist, new_control, nullptr);
-				// Check begin == end
-				return fr_reverse (std::get <0> (rev));
+				format_control_t* result = nullptr;
+				std::tie (result, begin) = _lexer (begin, end, new_arglist, new_control, nullptr);
+				if (begin != end)
+					throw uninformative_exception {};
+				return fr_reverse (result);
 			}
 
 		}
