@@ -46,7 +46,7 @@ namespace
 
 	bool valid_specifier (char c)
 	{
-		return valid_ascii_specifiers [c];
+		return valid_ascii_specifiers [static_cast <std::size_t> (c)];
 	}
 }
 
@@ -73,15 +73,15 @@ namespace cl_format {
 				}
 
 				arg_t make_vee_arg () {
-					return {arg_t::vee_tag};
+					return {arg_t::vee_tag, {}};
 				}
 
 				arg_t make_hash_arg () {
-					return {arg_t::hash_tag};
+					return {arg_t::hash_tag, {}};
 				}
 
 				arg_t make_unspecified_arg () {
-					return {arg_t::unspecified_tag};
+					return {arg_t::unspecified_tag, {}};
 				}
 
 
@@ -156,7 +156,7 @@ namespace cl_format {
 				std::tuple <arglist_t*, const char*>
 				get_args (const char* begin, const char* end, new_arglist_t new_arglist)
 				{
-					arglist_t* args;
+					arglist_t* args = nullptr;
 					std::tie (args, begin) = _get_args (begin, end, new_arglist, nullptr);
 					return std::make_tuple (fr_reverse (args), begin);
 				}
@@ -236,7 +236,7 @@ namespace cl_format {
 						return std::make_tuple (acc, begin);
 					if (*begin == '~') {
 						control_component_t control;
-						std::tie (control, begin) = get_directive (begin, end, new_arglist);
+						std::tie (control, begin) = get_directive (begin + 1, end, new_arglist);
 						return _lexer (begin, end, new_arglist, new_control, new_control (control, acc));
 					}
 					else {
