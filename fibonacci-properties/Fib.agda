@@ -49,12 +49,12 @@ module Fib where
     2-induction c₀ c₁ cₛ 0             = c₀
     2-induction c₀ c₁ cₛ 1             = c₁
     2-induction c₀ c₁ cₛ (suc (suc n)) = cₛ n (2-induction c₀ c₁ cₛ n)
-                                            (2-induction c₀ c₁ cₛ (suc n))
+                                              (2-induction c₀ c₁ cₛ (suc n))
 
-    Lemma₁ : ∀ (n z : ℕ) → Set
-    Lemma₁ zero      _ = ⊥
-    Lemma₁ (suc n-1) z = let n = suc n-1 in
-      f (1 + z + n) ≡ f (2 + z) * f n + f (1 + z) * f n-1
+  Lemma₁ : ∀ (n z : ℕ) → Set
+  Lemma₁ zero      _ = ⊥
+  Lemma₁ (suc n-1) z = let n = suc n-1 in
+    f (1 + z + n) ≡ f (2 + z) * f n + f (1 + z) * f n-1
 
   lemma₁ : ∀ n → n > 0 → ∀ m → Lemma₁ n m
   lemma₁ zero      ()  _
