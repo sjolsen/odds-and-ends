@@ -1,6 +1,7 @@
 module Fib where
   open import Data.Empty
   open import Data.Nat
+  open import Data.Nat.Divisibility
   open import Data.Nat.Properties
   open import Data.Nat.Properties.Simple
   open import Relation.Unary
@@ -15,7 +16,6 @@ module Fib where
 
   private
     +-cong = cong₂ _+_
-    *-cong = cong₂ _*_
 
     *-identityˡ : ∀ n → n ≡ 1 * n
     *-identityˡ zero      = refl
@@ -40,6 +40,13 @@ module Fib where
       a * x + c * x + b * y + d * y     ≡⟨ +-assoc (a * x + c * x) (b * y) (d * y) ⟩
       (a * x + c * x) + (b * y + d * y) ≡⟨ +-cong (sym (distribʳ-*-+ x a c)) (sym (distribʳ-*-+ y b d)) ⟩
       (a + c) * x + (b + d) * y         ∎
+
+    1-induction : ∀ {ℓ} {P : Pred ℕ ℓ}
+              → P 0
+              → (∀ n → P n → P (suc n))
+              → (∀ n → P n)
+    1-induction c₀ cₛ 0       = c₀
+    1-induction c₀ cₛ (suc n) = cₛ n (1-induction c₀ cₛ n)
 
     2-induction : ∀ {ℓ} {P : Pred ℕ ℓ}
               → P 0
@@ -86,3 +93,23 @@ module Fib where
           + (f (2 + k) + f (1 + k)) * f n-1       ≡⟨⟩
           f (4 + k) * f n + f (3 + k) * f n-1     ∎
     in 2-induction case₀ case₁ caseₛ m
+
+
+  open ∣-Reasoning renaming
+    ( begin_ to ∣-begin_
+    ; _∣⟨_⟩_ to _∣-≤⟨_⟩_
+    ; _≡⟨_⟩_ to _∣-≡⟨_⟩_
+    ; _∎     to _∣-∎ )
+
+  Lemma₂ : ∀ n p → Set
+  Lemma₂ n p = f n ∣ f (p * n)
+
+  lemma₂ : ∀ n m → n ∣ m → f n ∣ f m
+  lemma₂ n m (divides p m≡p*n) = subst₂ _∣_ refl (cong f (sym m≡p*n)) (1-induction case₀ caseₛ p)
+    where case₀ : Lemma₂ n 0
+          case₀ = f n ∣0
+          caseₛ : ∀ k → Lemma₂ n k → Lemma₂ n (1 + k)
+          caseₛ k (divides q f[k*n]≡q*fn) = ∣-begin
+            f n             ∣-≤⟨ {!!} ⟩
+            f (n + k * n)   ∣-≡⟨ {!!} ⟩
+            f ((1 + k) * n) ∣-∎
