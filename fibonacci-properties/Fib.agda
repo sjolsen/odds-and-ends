@@ -1,11 +1,13 @@
 module Fib where
   open import Data.Empty
   open import Data.Nat
-  open import Data.Nat.Divisibility
+  open import Data.Nat.Divisibility renaming (poset to ∣-poset) hiding (*-cong)
   open import Data.Nat.Properties
   open import Data.Nat.Properties.Simple
   open import Relation.Unary
+  open import Relation.Binary
   open import Relation.Binary.PropositionalEquality
+  open import Function
   open ≡-Reasoning
 
   f : ℕ → ℕ
@@ -16,6 +18,7 @@ module Fib where
 
   private
     +-cong = cong₂ _+_
+    *-cong = cong₂ _*_
 
     *-identityˡ : ∀ n → n ≡ 1 * n
     *-identityˡ zero      = refl
@@ -104,12 +107,69 @@ module Fib where
   Lemma₂ : ∀ n p → Set
   Lemma₂ n p = f n ∣ f (p * n)
 
+  private
+    0*n : ∀ n → 0 * n ≡ 0
+    0*n n = refl
+    n*0 : ∀ n → n * 0 ≡ 0
+    n*0 n = subst₂ _≡_ (*-comm zero n) refl (0*n n)
+
+    ≡→∣ : ∀ {m n} → m ≡ n → m ∣ n
+    ≡→∣ = Poset.reflexive ∣-poset
+
   lemma₂ : ∀ n m → n ∣ m → f n ∣ f m
-  lemma₂ n m (divides p m≡p*n) = subst₂ _∣_ refl (cong f (sym m≡p*n)) (1-induction case₀ caseₛ p)
-    where case₀ : Lemma₂ n 0
-          case₀ = f n ∣0
-          caseₛ : ∀ k → Lemma₂ n k → Lemma₂ n (1 + k)
-          caseₛ k (divides q f[k*n]≡q*fn) = ∣-begin
-            f n             ∣-≤⟨ {!!} ⟩
-            f (n + k * n)   ∣-≡⟨ {!!} ⟩
-            f ((1 + k) * n) ∣-∎
+  lemma₂ 0 m (divides p m≡p*n) = ≡→∣ $ begin
+    f 0       ≡⟨ cong f $ sym (n*0 p) ⟩
+    f (p * 0) ≡⟨ cong f $ sym m≡p*n ⟩
+    f m       ∎
+  lemma₂ (suc n-1) m (divides p m≡p*n) =
+    subst₂ _∣_ refl (sym (cong f m≡p*n)) (1-induction case₀ caseₛ p)
+      where n = suc n-1
+            case₀ : Lemma₂ n 0
+            case₀ = f n ∣0
+            case₁ : Lemma₂ n 1
+            case₁ = ≡→∣ $ begin
+              f n       ≡⟨ cong f (*-identityˡ n) ⟩
+              f (1 * n) ∎
+            caseₙ : ∀ p-2 → Lemma₂ n (suc p-2) → Lemma₂ n (suc (suc p-2))
+            caseₙ p-2 (divides q f[[p-1]n]≡q*fn) =
+              let p-1 = suc p-2
+                  p   = suc p-1
+                  z   = p-2 * n + n-1
+              in divides (f (2 + z) + q * f n-1) $
+              begin
+                f (p * n)                           ≡⟨ cong f $
+                begin
+                  p * n                   ≡⟨⟩
+                  n + (n + p-2 * n)       ≡⟨ +-cong (xrefl n) (+-comm n (p-2 * n)) ⟩
+                  n + (p-2 * n + n)       ≡⟨ sym $ +-assoc n (p-2 * n) n ⟩
+                  n + p-2 * n + n         ≡⟨⟩
+                  (1 + n-1) + p-2 * n + n ≡⟨ +-cong (+-assoc 1 n-1 (p-2 * n)) refl ⟩
+                  1 + (n-1 + p-2 * n) + n ≡⟨ +-cong (+-cong (xrefl 1) (+-comm n-1 (p-2 * n))) refl ⟩
+                  1 + (p-2 * n + n-1) + n ≡⟨⟩
+                  1 + z + n
+                ∎ ⟩
+                f (1 + z + n)                       ≡⟨ lemma₁ n (s≤s z≤n) z ⟩
+                f (2 + z) * f n + f (1 + z) * f n-1 ≡⟨ +-cong (xrefl (f (2 + z) * f n)) $
+                begin
+                  f (1 + z) * f n-1               ≡⟨⟩
+                  f (1 + (p-2 * n + n-1)) * f n-1 ≡⟨ flip *-cong refl $ cong f $
+                  begin
+                    1 + (p-2 * n + n-1) ≡⟨ +-comm 1 (p-2 * n + n-1) ⟩
+                    p-2 * n + n-1 + 1   ≡⟨ +-assoc (p-2 * n) n-1 1 ⟩
+                    p-2 * n + (n-1 + 1) ≡⟨ +-cong (xrefl (p-2 * n)) (+-comm n-1 1) ⟩
+                    p-2 * n + (1 + n-1) ≡⟨ +-comm (p-2 * n) n ⟩
+                    n + p-2 * n         ≡⟨⟩
+                    p-1 * n
+                  ∎ ⟩
+                  f (p-1 * n) * f n-1 ≡⟨ *-cong f[[p-1]n]≡q*fn refl ⟩
+                  (q * f n) * f n-1   ≡⟨ *-assoc q (f n) (f n-1) ⟩
+                  q * (f n * f n-1)   ≡⟨ *-cong (xrefl q) (*-comm (f n) (f n-1)) ⟩
+                  q * (f n-1 * f n)   ≡⟨ sym $ *-assoc q (f n-1) (f n) ⟩
+                  (q * f n-1) * f n
+                ∎ ⟩
+                f (2 + z) * f n + (q * f n-1) * f n ≡⟨ sym $ distribʳ-*-+ (f n) (f (2 + z)) (q * f n-1) ⟩
+                (f (2 + z) + q * f n-1) * f n
+              ∎
+            caseₛ : ∀ p → Lemma₂ n p → Lemma₂ n (suc p)
+            caseₛ 0 _         = case₁
+            caseₛ (suc p-1) x = caseₙ p-1 x
