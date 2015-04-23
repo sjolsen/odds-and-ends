@@ -5,8 +5,6 @@
 #include <functional>
 #include <vector>
 #include <ratio>
-#include <cassert>
-#include <limits>
 
 template <typename Key,
           typename Value,
@@ -50,11 +48,12 @@ private:
 	size_type _elements;
 	hash_type _hash;
 
-	hash_table (size_type log2_buckets)
-	// Checked precondition: 2 ^ log2_buckets is representable in size_type
+	hash_table (size_type buckets)
+	// Checked precondition: buckets is a power of 2
+		: _storage (buckets),
+		  _elements (0),
+		  _hash {}
 	{
-		assert (log2_buckets < std::numeric_limits <size_type>::digits);
-		_storage.resize (size_type {1} << log2_buckets);
 	}
 
 	size_type _buckets () const
@@ -62,14 +61,40 @@ private:
 		return _storage.size ();
 	}
 
+	bool _load_limit_exceeded () const
+	{
+		auto load_factor = static_cast <double> (_elements) / _buckets ();
+		auto load_limit  = static_cast <double> (Load_limit::num) / Load_limit::den;
+		return load_factor > load_limit;
+	}
+
 	bucket_type& _map_to_bucket (const key_type& key)
 	{
 		return _storage [_hash (key) % _buckets ()];
 	}
 
+	value_type* _rehash (size_type buckets, value_type* addr)
+	// Precondition: buckets is a valid constructor argument
+	// Precondition: buckets > _buckets ()
+	// Precondition: addr points to a value in the table
+	// Postcondition: returns the new location of *addr
+	{
+		hash_table new_table (buckets);
+		value_type* new_addr = nullptr;
+		for_each ([&new_table, &new_addr, addr] (const key_type& key, value_type& value) {
+			bool is_addr = &value == addr;
+			auto result = new_table.search (key);
+			auto& ref = new_table.insert (result.where, key, std::move (value));
+			if (is_addr)
+				new_addr = &ref;
+		});
+		*this = std::move (new_table);
+		return new_addr;
+	}
+
 public:
 	hash_table ()
-		: hash_table (4)
+		: hash_table (16)
 	{
 	}
 
@@ -90,13 +115,31 @@ public:
 	value_type& insert (index_type where, key_type key, value_type value)
 	// Precondition: search (key) = {false, where}
 	{
-		return where.bucket->insert (where.index, std::move (key), std::move (value));
+		auto* result = &where.bucket->insert (where.index, std::move (key), std::move (value));
+		++_elements;
+		if (_load_limit_exceeded ())
+			result = _rehash (2 * _buckets (), result);
+		return *result;
 	}
 
 	value_type& access (index_type where)
 	// Precondition: where.index is a valid argument to where.bucket.access
 	{
 		return where.bucket->access (where.index);
+	}
+
+	template <typename Pair_func>
+	void for_each (Pair_func f)
+	{
+		for (auto& bucket : _storage)
+			bucket.for_each (f);
+	}
+
+	template <typename Pair_func>
+	void for_each (Pair_func f) const
+	{
+		for (auto& bucket : _storage)
+			bucket.for_each (f);
 	}
 };
 

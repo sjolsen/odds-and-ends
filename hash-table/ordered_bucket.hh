@@ -66,6 +66,20 @@ public:
 	{
 		return where.iter->value ();
 	}
+
+	template <typename Pair_func>
+	void for_each (Pair_func f)
+	{
+		for (auto& pair : _storage)
+			f (pair.key (), pair.value ());
+	}
+
+	template <typename Pair_func>
+	void for_each (Pair_func f) const
+	{
+		for (auto& pair : _storage)
+			f (pair.key (), pair.value ());
+	}
 };
 
 #endif
