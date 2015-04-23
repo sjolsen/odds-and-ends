@@ -1,12 +1,12 @@
-#ifndef UNORDERED_BUCKET_HH
-#define UNORDERED_BUCKET_HH
+#ifndef ORDERED_BUCKET_HH
+#define ORDERED_BUCKET_HH
 
 #include "common.hh"
 #include "binary-search.hh"
 #include <vector>
 
 template <typename Key, typename Value>
-class unordered_bucket
+class ordered_bucket
 {
 public:
 	using key_type     = Key;
@@ -17,7 +17,7 @@ public:
 	struct index_type
 	{
 	private:
-		friend unordered_bucket;
+		friend ordered_bucket;
 		using iterator = typename storage_type::iterator;
 
 		iterator iter;
@@ -38,11 +38,11 @@ private:
 	storage_type _storage;
 
 public:
-	unordered_bucket () = default;
-	unordered_bucket (unordered_bucket&&) = default;
-	unordered_bucket (const unordered_bucket&) = delete;
-	unordered_bucket& operator = (unordered_bucket&&) = default;
-	unordered_bucket& operator = (const unordered_bucket&) = delete;
+	ordered_bucket () = default;
+	ordered_bucket (ordered_bucket&&) = default;
+	ordered_bucket (const ordered_bucket&) = delete;
+	ordered_bucket& operator = (ordered_bucket&&) = default;
+	ordered_bucket& operator = (const ordered_bucket&) = delete;
 
 	search_result search (const key_type& key)
 	{
