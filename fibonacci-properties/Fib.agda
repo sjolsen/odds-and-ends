@@ -98,15 +98,6 @@ module Fib where
     in 2-induction case₀ case₁ caseₛ m
 
 
-  open ∣-Reasoning renaming
-    ( begin_ to ∣-begin_
-    ; _∣⟨_⟩_ to _∣-≤⟨_⟩_
-    ; _≡⟨_⟩_ to _∣-≡⟨_⟩_
-    ; _∎     to _∣-∎ )
-
-  Lemma₂ : ∀ n p → Set
-  Lemma₂ n p = f n ∣ f (p * n)
-
   private
     0*n : ∀ n → 0 * n ≡ 0
     0*n n = refl
@@ -115,6 +106,9 @@ module Fib where
 
     ≡→∣ : ∀ {m n} → m ≡ n → m ∣ n
     ≡→∣ = Poset.reflexive ∣-poset
+
+    Lemma₂ : ∀ n p → Set
+    Lemma₂ n p = f n ∣ f (p * n)
 
   lemma₂ : ∀ n m → n ∣ m → f n ∣ f m
   lemma₂ 0 m (divides p m≡p*n) = ≡→∣ $ begin
@@ -137,7 +131,7 @@ module Fib where
                   z   = p-2 * n + n-1
               in divides (f (2 + z) + q * f n-1) $
               begin
-                f (p * n)                           ≡⟨ cong f $
+                f (p * n) ≡⟨ cong f $
                 begin
                   p * n                   ≡⟨⟩
                   n + (n + p-2 * n)       ≡⟨ +-cong (xrefl n) (+-comm n (p-2 * n)) ⟩
