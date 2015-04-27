@@ -44,6 +44,13 @@ module Fib where
       (a * x + c * x) + (b * y + d * y) ≡⟨ +-cong (sym (distribʳ-*-+ x a c)) (sym (distribʳ-*-+ y b d)) ⟩
       (a + c) * x + (b + d) * y         ∎
 
+    abc≡acb : ∀ a b c → a + b + c ≡ a + c + b
+    abc≡acb a b c = begin
+      (a + b) + c ≡⟨ +-assoc a b c ⟩
+      a + (b + c) ≡⟨ +-cong (xrefl a) (+-comm b c) ⟩
+      a + (c + b) ≡⟨ sym $ +-assoc a c b ⟩
+      (a + c) + b ∎
+
     1-induction : ∀ {ℓ} {P : Pred ℕ ℓ}
               → P 0
               → (∀ n → P n → P (suc n))
@@ -73,19 +80,17 @@ module Fib where
         case₀ : Lemma₁ n 0
         case₀ = begin
           f (1 + n)               ≡⟨⟩
-          f n + f n-1             ≡⟨ +-cong (*-identityˡ (f n)) (*-identityˡ (f n-1)) ⟩
-          1 * f n + 1 * f n-1     ≡⟨⟩
+                f n +       f n-1 ≡⟨ +-cong (*-identityˡ (f n)) (*-identityˡ (f n-1)) ⟩
+            1 * f n +   1 * f n-1 ≡⟨⟩
           f 2 * f n + f 1 * f n-1 ∎
         case₁ : Lemma₁ n 1
         case₁ = begin
-          f (2 + n)               ≡⟨⟩
-          f (1 + n) + f n         ≡⟨⟩
-          f n + f n-1 + f n       ≡⟨ +-assoc (f n) (f n-1) (f n) ⟩
-          f n + (f n-1 + f n)     ≡⟨ +-cong (xrefl (f n)) (+-comm (f n-1) (f n)) ⟩
-          f n + (f n + f n-1)     ≡⟨ sym (+-assoc (f n) (f n) (f n-1)) ⟩
-          f n + f n + f n-1       ≡⟨ +-cong (+-double (f n)) (*-identityˡ (f n-1)) ⟩
-          2 * f n + 1 * f n-1     ≡⟨⟩
-          f 3 * f n + f 2 * f n-1 ∎
+          f (2 + n)                 ≡⟨⟩
+          f (1 + n)   +       f n   ≡⟨⟩
+          f n + f n-1 +       f n   ≡⟨ abc≡acb (f n) (f n-1) (f n) ⟩
+          f n + f n   +       f n-1 ≡⟨ +-cong (+-double (f n)) (*-identityˡ (f n-1)) ⟩
+            2 * f n   +   1 * f n-1 ≡⟨⟩
+          f 3 * f n   + f 2 * f n-1 ∎
         caseₛ : ∀ k → Lemma₁ n k → Lemma₁ n (1 + k) → Lemma₁ n (2 + k)
         caseₛ k c₀ c₁ = begin
           f (3 + k + n)                           ≡⟨⟩
