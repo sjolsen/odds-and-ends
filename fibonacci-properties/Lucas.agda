@@ -89,12 +89,12 @@ module Lucas where
     where case₀ : Lemma-11b 0
           case₀ = begin
             inclusive-sum 0 (λ i → l i * l i) ≡⟨⟩
-            l 0 * l 0     ≡⟨⟩
-            2 * 2         ≡⟨⟩
-            4             ≡⟨⟩
-            2 + 2         ≡⟨⟩
-            2 * 1 + 2     ≡⟨⟩
-            l 0 * l 1 + 2 ∎
+            l 0 * l 0                         ≡⟨⟩
+            2 * 2                             ≡⟨⟩
+            4                                 ≡⟨⟩
+            2 + 2                             ≡⟨⟩
+            2 * 1 + 2                         ≡⟨⟩
+            l 0 * l 1 + 2                     ∎
           caseₛ : ∀ n-1 → Lemma-11b n-1 → Lemma-11b (suc n-1)
           caseₛ n-1 cₙ = let n = suc n-1 in begin
             inclusive-sum n   (λ i → l i * l i)             ≡⟨⟩
