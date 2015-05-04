@@ -9,6 +9,7 @@ module Lucas where
   open import Relation.Binary.PropositionalEquality
   open import Function
   open ≡-Reasoning
+  open SemiringSolver
 
   f : ℕ → ℕ
   f 0 = 0
@@ -44,7 +45,6 @@ module Lucas where
 
     [ab][cd]⇒[ac][bd] : ∀ a b c d → (a + b) + (c + d) ≡ (a + c) + (b + d)
     [ab][cd]⇒[ac][bd] = solve 4 (λ a b c d → a :+ b :+ (c :+ d) := a :+ c :+ (b :+ d)) refl
-      where open SemiringSolver
 
 
   Lemma-11a : ∀ (n-1 : ℕ) → Set
@@ -74,3 +74,33 @@ module Lucas where
             (f (1 + n) + f (3 + n)) + (f n + f (2 + n)) ≡⟨ [ab][cd]⇒[ac][bd] (f (1 + n)) (f (3 + n)) (f n) (f (2 + n)) ⟩
             (f (1 + n) + f n) + (f (3 + n) + f (2 + n)) ≡⟨⟩
             f (2 + n) + f (4 + n)                       ∎
+
+
+  private
+    inclusive-sum : ℕ → (ℕ → ℕ) → ℕ
+    inclusive-sum 0       f = f 0
+    inclusive-sum (suc n) f = (inclusive-sum n f) + f (suc n)
+
+  Lemma-11b : ∀ (n : ℕ) → Set
+  Lemma-11b n = inclusive-sum n (λ i → l i * l i) ≡ l n * l (suc n) + 2
+
+  proof-11b : ∀ n → Lemma-11b n
+  proof-11b = 1-induction case₀ caseₛ
+    where case₀ : Lemma-11b 0
+          case₀ = begin
+            inclusive-sum 0 (λ i → l i * l i) ≡⟨⟩
+            l 0 * l 0     ≡⟨⟩
+            2 * 2         ≡⟨⟩
+            4             ≡⟨⟩
+            2 + 2         ≡⟨⟩
+            2 * 1 + 2     ≡⟨⟩
+            l 0 * l 1 + 2 ∎
+          caseₛ : ∀ n-1 → Lemma-11b n-1 → Lemma-11b (suc n-1)
+          caseₛ n-1 cₙ = let n = suc n-1 in begin
+            inclusive-sum n   (λ i → l i * l i)             ≡⟨⟩
+            inclusive-sum n-1 (λ i → l i * l i) + l n * l n ≡⟨ +-cong cₙ refl ⟩
+            l n-1 * l n + 2 + l n * l n                     ≡⟨ solve 3 (λ a b c → a :* b :+ c :+ b :* b := a :* b :+ b :* b :+ c) refl (l n-1) (l n) 2 ⟩
+            l n-1 * l n + l n * l n + 2                     ≡⟨ +-cong (sym $ distribʳ-*-+ (l n) (l n-1) (l n)) refl ⟩
+            (l n-1 + l n) * l n + 2                         ≡⟨ solve 3 (λ a b c → (a :+ b) :* b :+ c := b :* (b :+ a) :+ c) refl (l n-1) (l n) 2 ⟩
+            l n * (l n + l n-1) + 2                         ≡⟨⟩
+            l n * l (suc n) + 2                             ∎
