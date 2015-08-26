@@ -32,7 +32,7 @@ class Ball
 	sf::CircleShape _circle;
 	sf::Vector2f _velocity;
 
-	friend decltype (auto) draw (sf::RenderWindow& window, const Ball& Ball);
+	friend void draw (sf::RenderWindow& window, const Ball& Ball);
 
 public:
 	Ball (sf::Vector2f initial_position,
@@ -87,9 +87,9 @@ public:
 	}
 };
 
-decltype (auto) draw (sf::RenderWindow& window, const Ball& Ball)
+void draw (sf::RenderWindow& window, const Ball& Ball)
 {
-	return window.draw (Ball._circle);
+	window.draw (Ball._circle);
 }
 
 
